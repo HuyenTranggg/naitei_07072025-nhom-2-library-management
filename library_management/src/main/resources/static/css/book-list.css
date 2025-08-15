@@ -56,3 +56,21 @@
 .icon-large {
     font-size: 1.5rem; /* hoặc px như 24px */
 }
+
+.editions-sub-table {
+    padding: 1rem;
+    background-color: #f8f9fa; 
+    border-top: 2px solid #dee2e6;
+}
+
+.editions-sub-table .table-sm th,
+.editions-sub-table .table-sm td {
+    padding: 0.6rem;
+    vertical-align: middle;
+}
+
+.editions-sub-table .thead-light th {
+    background-color: #e9ecef;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 500;
+}

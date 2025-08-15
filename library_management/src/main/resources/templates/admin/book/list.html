@@ -80,7 +80,7 @@
                                 <p class="text-muted mt-2">Không có đầu sách nào phù hợp.</p>
                             </td>
                         </tr>
-                        <tr th:each="book, iterStat : ${bookPage.content}">
+                        <tr th:each="book, iterStat : ${bookPage.content}" th:id="'book-row-' + ${book.id()}">
                             <td th:text="${bookPage.number * bookPage.size + iterStat.count}"></td>
                             <td th:text="${book.title()}"></td>
                             <td>
@@ -92,13 +92,16 @@
                                       th:text="${genre} + (${!genreStat.last} ? ', ' : '')"></span>
                             </td>
                             <td class="text-center">
-                                <div>
-                                    <a href="#" class="btn btn-sm btn-outline-primary">
-                                        Xem [[${book.editions().size()}]] phiên bản
-                                    </a>
-                                </div>
                                 <div th:if="${book.editions().isEmpty()}">
                                     <span class="badge badge-secondary">Chưa có</span>
+                                </div>                                
+                                <div>
+                                    <!-- Thay thế hoàn toàn thẻ <a> bằng thẻ <button> -->
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary js-toggle-editions" 
+                                            th:data-book-id="${book.id()}">
+                                        Xem [[${book.editions().size()}]] phiên bản
+                                    </button>
                                 </div>
                             </td>
                             <td class="text-center">
@@ -140,5 +143,10 @@
         </div>
     </div>
 </div>
+
+<th:block layout:fragment="page-scripts">
+    <script th:src="@{/js/book-list.js}"></script> 
+</th:block>
+
 </body>
 </html>

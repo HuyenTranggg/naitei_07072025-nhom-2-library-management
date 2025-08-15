@@ -34,7 +34,19 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         return userDetailsService;
     }
-
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authorize -> authorize
+                // Cho phép tất cả mọi request đi qua
+                .anyRequest().permitAll() 
+            )
+            // Tắt CSRF vì chúng ta chưa cần đến nó
+            .csrf(AbstractHttpConfigurer::disable); 
+        
+        return http.build();
+    }
+/**
     @Bean
     @Order(1)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -82,4 +94,6 @@ public class SecurityConfig {
             });
         return http.build();
     }
+**/
+
 }
