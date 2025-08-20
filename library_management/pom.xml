@@ -140,6 +140,12 @@
 			<artifactId>sweetalert2</artifactId>
 			<version>${sweetalert2.version}</version>
 		</dependency>
+		<!--File handle-->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>32.1.2-jre</version>
+		</dependency>
 	</dependencies>
 
 	<build>

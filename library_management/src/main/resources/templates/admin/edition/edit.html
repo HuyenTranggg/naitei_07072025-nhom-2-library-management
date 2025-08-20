@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin_layout}">
+<head>
+    <title th:text="#{admin.editions.edit.page_title}"></title>
+    <!-- Add custom CSS for this page if needed -->
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <h3 class="page-title">
+            <span class="page-title-icon bg-gradient-primary text-white mr-2">
+                <i class="mdi mdi-pencil"></i>
+            </span>
+            <span th:text="#{admin.editions.edit.header_title}"></span>
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}" th:text="#{admin.breadcrumb.dashboard}"></a></li>
+                <li class="breadcrumb-item"><a th:href="@{/admin/books}" th:text="#{admin.breadcrumb.all_books}"></a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="#{admin.breadcrumb.edit_edition}"></li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-12 grid-margin">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title" th:text="#{admin.editions.edit.card_title}"></h4>
+
+                    <!-- Edit form-->
+                    <form th:action="@{/admin/editions/{id}(id=${edition.id})}"
+                          th:object="${editionRequest}" method="post" enctype="multipart/form-data" class="forms-sample">
+
+                        <!-- Show message -->
+                        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+                        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                        <div class="form-group">
+                            <label for="title" th:text="#{admin.editions.edit.label.title}"></label>
+                            <input type="text" class="form-control" id="title" th:field="*{title}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="isbn" th:text="#{admin.editions.edit.label.isbn}"></label>
+                            <input type="text" class="form-control" id="isbn" th:field="*{isbn}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="publisher" th:text="#{admin.editions.edit.label.publisher}"></label>
+                            <select class="form-control" id="publisher" th:field="*{publisherId}">
+                                <!-- Publisher options -->
+                                <option th:each="p : ${publishers}" th:value="${p.id}" th:text="${p.name}"></option>
+                            </select>
+                            <small class="text-danger" th:if="${#fields.hasErrors('publisherId')}" th:errors="*{publisherId}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="publicationDate" th:text="#{admin.editions.edit.label.publication_date}"></label>
+                            <input type="date" class="form-control" id="publicationDate" th:field="*{publicationDate}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('publicationDate')}" th:errors="*{publicationDate}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pageNumber" th:text="#{admin.editions.edit.label.pages}"></label>
+                            <input type="number" class="form-control" id="pageNumber" th:field="*{pageNumber}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('pageNumber')}" th:errors="*{pageNumber}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="language" th:text="#{admin.editions.edit.label.language}"></label>
+                            <input type="text" class="form-control" id="language" th:field="*{language}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('language')}" th:errors="*{language}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="format" th:text="#{admin.editions.edit.label.format}"></label>
+                            <select class="form-control" id="format" th:field="*{format}">
+                                <option th:each="f : ${T(com.group2.library_management.entity.enums.BookFormat).values()}"
+                                        th:value="${f}" th:text="${f.name()}"></option>
+                            </select>
+                            <small class="text-danger" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></small>
+                        </div>
+
+                        <!-- Upload image -->
+                        <div class="form-group">
+                            <label th:text="#{admin.editions.edit.label.cover_image}"></label>
+                            <img th:src="${edition.coverImageUrl != null ? edition.coverImageUrl + '?v=' + #dates.createNow().getTime() : '/images/default-cover.png'}"
+                                 width="150" class="d-block mb-2 border rounded">
+                            <label for="coverImageFile" th:text="#{admin.editions.edit.label.upload_image}"></label>
+                            <input type="file" class="form-control-file" id="coverImageFile" name="coverImageFile">
+                        </div>
+
+                        <!-- Read-only fields -->
+                        <hr>
+                        <h5 th:text="#{admin.editions.edit.label.quantity_info}"></h5>
+                        <fieldset disabled>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="initialQuantity" th:text="#{admin.editions.edit.label.initial_quantity}"></label>
+                                    <input type="text" class="form-control" id="initialQuantity" th:value="${edition.initialQuantity}">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="availableQuantity" th:text="#{admin.editions.edit.label.available_quantity}"></label>
+                                    <input type="text" class="form-control" id="availableQuantity" th:value="${edition.availableQuantity}">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- Button -->
+                        <button type="submit" class="btn btn-gradient-primary mr-2" th:text="#{admin.editions.edit.button.update}"></button>
+                        <a th:href="@{/admin/books}" class="btn btn-light" th:text="#{admin.editions.edit.button.cancel}"></a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

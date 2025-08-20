@@ -17,6 +17,16 @@ function showToast(message, type = 'success') {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+
+    const el = document.getElementById("flashMessage");
+    if (el) {
+        setTimeout(() => {
+        el.style.transition = "opacity 0.5s";
+        el.style.opacity = 0;
+        setTimeout(() => el.remove(), 500);
+        }, 3000);
+    }
+    
     const toggleButtons = document.querySelectorAll('.js-toggle-editions');
     const editionsTemplate = document.getElementById('editions-table-template');
 
@@ -130,7 +140,8 @@ document.addEventListener('DOMContentLoaded', function () {
         
         const coverImage = document.getElementById('modal-edition-cover');
         const defaultCover = '/images/editions/default-cover.png';
-        coverImage.src = data.coverImageUrl || defaultCover;
+        const imageUrl = data.coverImageUrl || '/images/default-cover.png';
+        coverImage.src = `${imageUrl}?v=${new Date().getTime()}`; // Cache-busting query parameter
         coverImage.onerror = function () {
             this.onerror = null;
             this.src = defaultCover;
@@ -156,6 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create data rows
         editions.forEach(edition => {
             const row = document.createElement('tr');
+            const editUrl = `/admin/editions/${edition.id}/edit`;
             row.innerHTML = `
                 <td class="col-sub-title">${edition.title}</td>
                 <td class="col-sub-isbn">${edition.isbn}</td>
@@ -166,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <!-- BỌC CÁC ICON VÀO MỘT DIV CONTAINER -->
                     <div class="action-icons">
                         <a href="#" class="text-info js-view-edition" title="${i18n.tooltip.view}" data-edition-id="${edition.id}"><i class="mdi mdi-eye"></i></a>
-                        <a href="#" class="text-primary" title="${i18n.tooltip.edit}"><i class="mdi mdi-pencil"></i></a>
+                        <a href="${editUrl}" class="text-primary" title="${i18n.tooltip.edit}"><i class="mdi mdi-pencil"></i></a>
                         <a href="#" class="text-danger" title="${i18n.tooltip.delete}"><i class="mdi mdi-delete"></i></a>
                     </div>
                 </td>

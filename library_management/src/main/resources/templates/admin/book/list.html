@@ -11,6 +11,13 @@
 <body>
 
 <div layout:fragment="content">
+
+    <div th:if="${successMessage}" id="flashMessage"
+         class="alert alert-success alert-dismissible fade show" role="alert"
+         th:text="${successMessage}">
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <div class="page-header">
         <h3 class="page-title">
             <span class="page-title-icon bg-gradient-primary text-white mr-2">

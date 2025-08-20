@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -12,9 +13,13 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 @ControllerAdvice(basePackages = "com.group2.library_management.controller.admin")
+@RequiredArgsConstructor
 public class WebExceptionHandler {
+
+    private final MessageSource messageSource;
     
     @ExceptionHandler(Exception.class)
     public ModelAndView handleWebException(HttpServletRequest req, Exception ex) {
@@ -29,7 +34,7 @@ public class WebExceptionHandler {
     public ModelAndView handleNotFound(HttpServletRequest req, ResourceNotFoundException ex) {
         ModelAndView mav = new ModelAndView();
         mav.addObject("message", ex.getMessage());
-        mav.setViewName("404");
+        mav.setViewName("error/404");
         return mav;
     }
 
@@ -86,4 +91,41 @@ public class WebExceptionHandler {
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(FileStorageException.class)
+    public String handleFileStorageException(FileStorageException ex, RedirectAttributes redirectAttributes, HttpServletRequest request) {
+
+        String errorCode = ex.getErrorCode();
+        Object[] args = ex.getArgs();
+
+        if (errorCode == null) {
+            errorCode = "error.file.storage_failed";
+        }
+
+        String message = messageSource.getMessage(
+            errorCode,
+            args, 
+            request.getLocale()
+        );
+        
+        redirectAttributes.addFlashAttribute("errorMessage", message);
+        
+        String referer = request.getHeader("Referer");
+        if (referer != null && !referer.isEmpty()) {
+            return "redirect:" + referer;
+        }
+
+        return "redirect:/";
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public String handleIllegalArgumentException(IllegalArgumentException ex, RedirectAttributes redirectAttributes, HttpServletRequest request) {
+        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+
+        String referer = request.getHeader("Referer");
+        if (referer != null && !referer.isEmpty()) {
+            return "redirect:" + referer;
+        }
+
+        return "redirect:/";
+    }
 }

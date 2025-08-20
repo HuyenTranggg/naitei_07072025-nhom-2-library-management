@@ -5,9 +5,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Collections;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.group2.library_management.dto.request.UpdateEditionRequest;
 import com.group2.library_management.dto.response.EditionDetailResponse;
 import com.group2.library_management.dto.response.EditionListResponse;
 import com.group2.library_management.entity.Book;
@@ -77,4 +80,13 @@ public abstract class EditionMapper {
                 edition.getAvailableQuantity()
         );
     }
+
+    // Entity -> Request DTO
+    @Mapping(source = "publisher.id", target = "publisherId")
+    public abstract UpdateEditionRequest toUpdateRequest(Edition edition);
+
+    // Request DTO -> Entity
+    // Ignore publisherId because we will handle it in the service
+    @Mapping(target = "publisher", ignore = true) 
+    public abstract void updateFromRequest(UpdateEditionRequest request, @MappingTarget Edition edition);
 } 
