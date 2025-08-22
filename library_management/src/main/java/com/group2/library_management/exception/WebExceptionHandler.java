@@ -29,7 +29,7 @@ public class WebExceptionHandler {
     public ModelAndView handleNotFound(HttpServletRequest req, ResourceNotFoundException ex) {
         ModelAndView mav = new ModelAndView();
         mav.addObject("message", ex.getMessage());
-        mav.setViewName("404");
+        mav.setViewName("error/404");
         return mav;
     }
 

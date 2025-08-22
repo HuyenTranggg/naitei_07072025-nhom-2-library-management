@@ -3,6 +3,7 @@ package com.group2.library_management.dto.mapper;
 import com.group2.library_management.dto.response.BookDetailResponse;
 import com.group2.library_management.dto.response.BookResponse;
 import com.group2.library_management.dto.response.EditionSummaryResponse;
+import com.group2.library_management.dto.request.UpdateBookRequest;
 import com.group2.library_management.entity.Author;
 import com.group2.library_management.entity.AuthorBook;
 import com.group2.library_management.entity.Book;
@@ -19,6 +20,8 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.Collections;
 import java.util.List;
+import org.mapstruct.MappingTarget;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BookMapper {
@@ -92,5 +95,38 @@ public interface BookMapper {
         return (int) bookInstances.stream()
                 .filter(instance -> instance.getStatus() == BookStatus.AVAILABLE)
                 .count();
+    }
+
+    @Mapping(source = "authorBooks", target = "authorIds", qualifiedByName = "authorBooksToIds")
+    @Mapping(source = "bookGenres", target = "genreIds", qualifiedByName = "bookGenresToIds")
+    UpdateBookRequest toUpdateRequest(Book book);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "editions", ignore = true)
+    @Mapping(target = "authorBooks", ignore = true)
+    @Mapping(target = "bookGenres", ignore = true)
+    void updateFromRequest(UpdateBookRequest request, @MappingTarget Book book);
+
+    @Named("authorBooksToIds")
+    default List<Integer> authorBooksToIds(List<AuthorBook> authorBooks) {
+        if (authorBooks == null || authorBooks.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return authorBooks.stream()
+                .map(AuthorBook::getAuthor)
+                .map(Author::getId)
+                .collect(Collectors.toList());
+    }
+
+
+    @Named("bookGenresToIds")
+    default List<Integer> bookGenresToIds(List<BookGenre> bookGenres) {
+        if (bookGenres == null || bookGenres.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return bookGenres.stream()
+                .map(BookGenre::getGenre)
+                .map(Genre::getId)
+                .collect(Collectors.toList());
     }
 }

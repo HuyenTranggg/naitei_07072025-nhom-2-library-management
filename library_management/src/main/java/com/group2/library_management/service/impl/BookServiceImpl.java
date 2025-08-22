@@ -5,18 +5,30 @@ import com.group2.library_management.dto.enums.MatchMode;
 import com.group2.library_management.dto.mapper.BookMapper;
 import com.group2.library_management.dto.request.BookQueryParameters;
 import com.group2.library_management.dto.response.BookDetailResponse;
+import com.group2.library_management.dto.request.UpdateBookRequest;
 import com.group2.library_management.dto.response.BookResponse;
+import com.group2.library_management.entity.Author;
+import com.group2.library_management.entity.AuthorBook;
 import com.group2.library_management.entity.Book;
 import com.group2.library_management.exception.ResourceNotFoundException;
+import com.group2.library_management.entity.BookGenre;
+import com.group2.library_management.entity.Genre;
+import com.group2.library_management.exception.ResourceNotFoundException;
+import com.group2.library_management.repository.AuthorRepository;
 import com.group2.library_management.repository.BookRepository;
 import com.group2.library_management.repository.specification.BookSpecification;
 import com.group2.library_management.service.BookService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.group2.library_management.repository.GenreRepository;
+
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +48,10 @@ public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
+    private final AuthorRepository authorRepository;
+    private final GenreRepository genreRepository;
+
+    private final MessageSource messageSource;
 
     @Override
     public Page<BookResponse> getAllBooks(BookQueryParameters params) {
@@ -91,5 +107,62 @@ public class BookServiceImpl implements BookService {
                 .orElseThrow(() -> new ResourceNotFoundException());
 
         return bookMapper.toBookDetailResponse(book);
+    }
+
+    @Override
+    public Book getById(Integer id) {
+        return bookRepository.findById(id)
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage(
+                        "common.error.resource_not_found",
+                        new Object[]{"Book", id},
+                        LocaleContextHolder.getLocale()
+                    );
+                    return new ResourceNotFoundException(message);
+                });
+    }
+
+    @Override
+    @Transactional 
+    public void updateBook(Integer id, UpdateBookRequest request) {
+        // get book
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage(
+                        "common.error.resource_not_found",
+                        new Object[]{"Book", id},
+                        LocaleContextHolder.getLocale()
+                    );
+                    return new ResourceNotFoundException(message);
+                });
+
+        // mapper
+        bookMapper.updateFromRequest(request, book);
+
+        // get entity Author and Genre
+        List<Author> authors = authorRepository.findAllById(request.getAuthorIds());
+        List<Genre> genres = genreRepository.findAllById(request.getGenreIds());
+
+        book.getAuthorBooks().clear();
+        book.getBookGenres().clear();
+    
+        authors.forEach(author -> {
+            AuthorBook authorBook = AuthorBook.builder()
+                    .book(book)
+                    .author(author)
+                    .build();
+            book.getAuthorBooks().add(authorBook);
+        });
+        
+        genres.forEach(genre -> {
+            BookGenre bookGenre = BookGenre.builder()
+                    .book(book)
+                    .genre(genre)
+                    .build();
+            book.getBookGenres().add(bookGenre);
+        });
+
+        // save
+        bookRepository.save(book);
     }
 }

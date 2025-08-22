@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin_layout}">
+<head>
+    <title th:text="#{admin.books.edit.page_title}"></title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <h3 class="page-title">
+            <span class="page-title-icon bg-gradient-primary text-white mr-2">
+                <i class="mdi mdi-pencil"></i>
+            </span>
+            <span th:text="#{admin.books.edit.header_title}"></span>
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}" th:text="#{admin.breadcrumb.dashboard}"></a></li>
+                <li class="breadcrumb-item"><a th:href="@{/admin/books}" th:text="#{admin.breadcrumb.all_books}"></a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="#{admin.breadcrumb.edit_book}"></li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-12 grid-margin">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title" th:text="#{admin.books.edit.card_title}"></h4>
+
+                    <form th:action="@{/admin/books/{id}(id=${bookId})}"
+                          th:object="${bookRequest}" method="post">
+                        
+                        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <strong th:text="${successMessage}"></strong>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong th:text="${errorMessage}"></strong>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+                            <ul>
+                                <li th:each="err : ${#fields.globalErrors()}" th:text="${err}"></li>
+                            </ul>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="title" th:text="#{admin.books.edit.label.title}"></label>
+                            <input type="text" class="form-control" th:field="*{title}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="authors" th:text="#{admin.books.edit.label.authors}"></label>
+                            <select class="form-control select2-multiple" id="authors" th:field="*{authorIds}" multiple="multiple">
+                                <option th:each="author : ${allAuthors}" th:value="${author.id}" th:text="${author.name}"></option>
+                            </select>
+                            <small class="text-danger" th:if="${#fields.hasErrors('authorIds')}" th:errors="*{authorIds}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="genres" th:text="#{admin.books.edit.label.genres}"></label>
+                            <select class="form-control select2-multiple" id="genres" th:field="*{genreIds}" multiple="multiple">
+                                <option th:each="genre : ${allGenres}" th:value="${genre.id}" th:text="${genre.name}"></option>
+                            </select>
+                            <small class="text-danger" th:if="${#fields.hasErrors('genreIds')}" th:errors="*{genreIds}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description" th:text="#{admin.books.edit.label.description}"></label>
+                            <textarea class="form-control" th:field="*{description}" rows="4"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-gradient-primary mr-2" th:text="#{admin.books.edit.button.update}"></button>
+                        <a th:href="@{/admin/books}" class="btn btn-light" th:text="#{admin.books.edit.button.cancel}"></a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2-multiple').select2({
+                placeholder: "Chọn hoặc gõ để tìm kiếm",
+                allowClear: true
+            });
+        });
+    </script>
+</th:block>
+
+</body>
+</html>
