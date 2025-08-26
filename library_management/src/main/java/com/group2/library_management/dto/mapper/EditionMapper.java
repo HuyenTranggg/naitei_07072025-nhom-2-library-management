@@ -11,6 +11,7 @@ import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.group2.library_management.dto.request.UpdateEditionRequest;
+import com.group2.library_management.dto.response.ClientEditionDetailResponse;
 import com.group2.library_management.dto.response.EditionDetailResponse;
 import com.group2.library_management.dto.response.EditionListResponse;
 import com.group2.library_management.dto.response.EditionResponse;
@@ -98,4 +99,44 @@ public abstract class EditionMapper {
 
     @Mapping(target = "publisher", ignore = true)
     public abstract void updateFromRequest(UpdateEditionRequest request, @MappingTarget Edition edition);
+    
+    public ClientEditionDetailResponse toClientDetailDto(Edition edition) {
+        if (edition == null) {
+            return null;
+        }
+
+        Book book = edition.getBook();
+        Publisher publisher = edition.getPublisher();
+
+        List<String> authorNames = Optional.ofNullable(book)
+                .map(Book::getAuthorBooks)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(authorBook -> authorBook.getAuthor().getName())
+                .collect(Collectors.toList());
+
+        List<String> genreNames = Optional.ofNullable(book)
+                .map(Book::getBookGenres)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(bookGenre -> bookGenre.getGenre().getName())
+                .collect(Collectors.toList());
+
+        return new ClientEditionDetailResponse(
+                edition.getId(),
+                edition.getTitle(),
+                book != null ? book.getTitle() : null,
+                authorNames,
+                genreNames,
+                edition.getIsbn(),
+                publisher != null ? publisher.getName() : null,
+                edition.getPublicationDate(),
+                edition.getLanguage(),
+                edition.getPageNumber(),
+                edition.getCoverImageUrl(),
+                edition.getFormat(),
+                book != null ? book.getDescription() : null,
+                edition.getAvailableQuantity() 
+        );
+    }
 } 
