@@ -196,4 +196,28 @@ document.addEventListener('DOMContentLoaded', function () {
             deleteEditionModal.show();
         }
     });
+    // --- KHỞI TẠO MODAL ---
+    const deleteBookModalElement = document.getElementById('deleteBookModal');
+    if (deleteBookModalElement) {
+        const deleteBookModal = new bootstrap.Modal(deleteBookModalElement);
+        const deleteBookForm = document.getElementById('deleteBookForm');
+        const deleteBookMessage = document.getElementById('deleteBookConfirmMessage');
+
+        // --- SỬ DỤNG EVENT DELEGATION ---
+        document.body.addEventListener('click', function(event) {
+            const deleteButton = event.target.closest('.js-delete-book');
+            if (deleteButton) {
+                // Đọc dữ liệu trực tiếp từ các thuộc tính data-* của nút
+                const bookId = deleteButton.dataset.bookId;
+                const confirmMessage = deleteButton.dataset.confirmMessage;
+
+                // Cập nhật form trong Modal
+                if (deleteBookForm && deleteBookMessage) {
+                    deleteBookForm.action = `/admin/books/${bookId}`;
+                    deleteBookMessage.textContent = confirmMessage;
+                    deleteBookModal.show();
+                }
+            }
+        });
+    }
 });

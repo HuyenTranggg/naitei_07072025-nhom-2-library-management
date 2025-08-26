@@ -88,8 +88,8 @@ public class WebExceptionHandler {
         return "redirect:/";
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class, ConcurrencyException.class})
-    public String handleCommonException(
+    @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class, ConcurrencyException.class, DataIntegrityViolationException.class, OperationFailedException.class})
+    public String handleCommonArgumentException(
             Exception ex,
             RedirectAttributes redirectAttributes,
             HttpServletRequest request) {
@@ -116,40 +116,6 @@ public class WebExceptionHandler {
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(OperationFailedException.class)
-    public String handleOperationFailedException(OperationFailedException ex, 
-                                                 RedirectAttributes redirectAttributes,
-                                                 HttpServletRequest request) {
-
-
-        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-
-        String referer = request.getHeader("Referer");
-
-        if (referer != null && !referer.isEmpty()) {
-            return "redirect:" + referer;
-        }
-        return "redirect:/"; 
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public Object handleDataIntegrity(DataIntegrityViolationException ex,
-                                      RedirectAttributes redirectAttributes,
-                                      HttpServletRequest request) {
-        String msg = messageSource.getMessage("admin.editions.message.cannot_delete",
-                                              null,
-                                              ex.getMessage(),
-                                              LocaleContextHolder.getLocale());
-        redirectAttributes.addFlashAttribute("errorMessage", msg);
-
-        String referer = request.getHeader("Referer");
-
-        if (referer != null && !referer.isEmpty()) {
-
-            return "redirect:" + referer;
-        }
-        return "redirect:/";
-    }
 
     @ExceptionHandler(DuplicateIsbnCreateEditionException.class)
     public String handleDuplicateIsbnCreateEditionException(

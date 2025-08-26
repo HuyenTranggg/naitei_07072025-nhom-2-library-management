@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.group2.library_management.entity.Edition;
 
@@ -25,4 +27,17 @@ public interface EditionRepository extends JpaRepository<Edition, Integer>, JpaS
     @Modifying
     @Query("DELETE FROM Edition e WHERE e.id = :id")
     void hardDeleteById(Integer id);
+    
+    boolean existsByBookIdAndDeletedAtIsNull(Integer editionId);
+
+    // nativeQuery trả về số (0/1). Dùng Integer/Number để tránh cast lỗi.
+    @Query(value = "SELECT EXISTS(SELECT 1 FROM editions WHERE book_id = :bookId)", 
+           nativeQuery = true)
+    Integer existsByBookIdNative(@Param("bookId") Integer bookId);
+
+    // default method thực hiện convert sang boolean
+    default boolean existsByBookId(Integer bookId) {
+        Integer result = existsByBookIdNative(bookId);
+        return result != null && result != 0;
+    }
 }

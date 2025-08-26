@@ -12,6 +12,7 @@ import com.group2.library_management.entity.BookInstance;
 import com.group2.library_management.entity.Edition;
 import com.group2.library_management.entity.Genre;
 import com.group2.library_management.entity.enums.BookStatus;
+import com.group2.library_management.entity.enums.DeletionStatus;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -32,10 +33,10 @@ public interface BookMapper {
      * @param book Entity Book
      * @return DTO BookResponse
      */
-    @Mapping(source = "authorBooks", target = "authors", qualifiedByName = "authorBooksToAuthorNames")
-    @Mapping(source = "bookGenres", target = "genres", qualifiedByName = "bookGenresToGenreNames")
+    @Mapping(source = "book.authorBooks", target = "authors", qualifiedByName = "authorBooksToAuthorNames")
+    @Mapping(source = "book.bookGenres", target = "genres", qualifiedByName = "bookGenresToGenreNames")
     @Mapping(target = "editionCount", expression = "java(book.getEditions() != null ? book.getEditions().size() : 0)")
-    BookResponse toBookResponse(Book book);
+    BookResponse toBookResponse(Book book, DeletionStatus deletionStatus);
 
     /**
      * Chuyển đổi List<AuthorBook> sang List<String>.

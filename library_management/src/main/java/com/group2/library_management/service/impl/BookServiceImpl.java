@@ -11,13 +11,19 @@ import com.group2.library_management.dto.response.BookResponse;
 import com.group2.library_management.entity.Author;
 import com.group2.library_management.entity.AuthorBook;
 import com.group2.library_management.entity.Book;
+import com.group2.library_management.entity.enums.DeletionStatus;
+import com.group2.library_management.exception.OperationFailedException;
+import com.group2.library_management.exception.ResourceNotFoundException;
 import com.group2.library_management.entity.BookGenre;
 import com.group2.library_management.entity.Genre;
 import com.group2.library_management.exception.DuplicateBookException;
 import com.group2.library_management.exception.ResourceNotFoundException;
 import com.group2.library_management.repository.AuthorRepository;
+import com.group2.library_management.repository.AuthorBookRepository;
+import com.group2.library_management.repository.BookGenreRepository;
 import com.group2.library_management.repository.BookRepository;
 import com.group2.library_management.repository.GenreRepository;
+import com.group2.library_management.repository.EditionRepository;
 import com.group2.library_management.repository.specification.BookSpecification;
 import com.group2.library_management.service.BookService;
 
@@ -33,6 +39,8 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -54,6 +62,9 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final AuthorRepository authorRepository;
     private final GenreRepository genreRepository;
+    private final AuthorBookRepository authorBookRepository;
+    private final BookGenreRepository bookGenreRepository;
+    private final EditionRepository editionRepository;
 
     private final BookMapper bookMapper;
 
@@ -108,7 +119,10 @@ public class BookServiceImpl implements BookService {
 
         Page<Book> bookPage = bookRepository.findAll(spec, pageable);
 
-        return bookPage.map(bookMapper::toBookResponse);
+        return bookPage.map(book -> {
+            DeletionStatus status = determineBookDeletionStatus(book.getId());
+            return bookMapper.toBookResponse(book, status);
+        });
     }
 
     @Override
@@ -340,5 +354,46 @@ public class BookServiceImpl implements BookService {
                 throw new DuplicateBookException();
             }
         }
+    }
+
+    @Override
+    @Transactional
+    public void deleteBook(Integer id) {
+
+        if (!bookRepository.existsById(id)) {
+            throw new ResourceNotFoundException();
+        }
+
+        DeletionStatus status = determineBookDeletionStatus(id);
+
+        switch (status) {
+            case CAN_HARD_DELETE:
+                authorBookRepository.deleteByBookId(id);
+                bookGenreRepository.deleteByBookId(id);
+                bookRepository.hardDeleteById(id);
+                break;
+            case CAN_SOFT_DELETE:
+                bookRepository.deleteById(id);
+                break;
+            case CANNOT_DELETE:
+                String message = messageSource.getMessage("admin.books.message.cannot_delete", null, LocaleContextHolder.getLocale());
+                throw new OperationFailedException(message);
+        }
+    }
+
+    private DeletionStatus determineBookDeletionStatus(Integer bookId) {
+        boolean anyEditionExists = editionRepository.existsByBookId(bookId);
+
+        if (!anyEditionExists) {
+            return DeletionStatus.CAN_HARD_DELETE;
+        }
+
+        boolean activeEditionExists = editionRepository.existsByBookIdAndDeletedAtIsNull(bookId);
+
+        if (!activeEditionExists) {
+            return DeletionStatus.CAN_SOFT_DELETE;
+        }
+
+        return DeletionStatus.CANNOT_DELETE;
     }
 }
