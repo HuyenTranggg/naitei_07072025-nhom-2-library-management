@@ -9,6 +9,8 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 
+import lombok.RequiredArgsConstructor;
+
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
@@ -35,13 +37,11 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JpaUserDetailsService userDetailsService;
-
-    public SecurityConfig(JpaUserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
+    private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -94,38 +94,38 @@ public class SecurityConfig {
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())));
         return http.build();
     }
-/** 
+
     @Bean
     @Order(2)
     public SecurityFilterChain adminSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> {
                 authorize
-                    .requestMatchers("/css/**", "/js/**", "/images/**", "/login", "/access-denied", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                    .requestMatchers("/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/vendors/**", "/css/**", "/js/**", "/images/**", "/admin/login", "/admin/access-denied", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    .requestMatchers(Endpoints.Admin.ALL_STRINGS).hasRole("ADMIN")
                     .anyRequest().authenticated();
             })
             .formLogin(form -> {
                 form
-                    .loginPage("/login")
-                    .loginProcessingUrl("/login")
-                    .defaultSuccessUrl("/admin/dashboard", true)
-                    .failureUrl("/login?error=true")
+                    .loginPage(Endpoints.Admin.Login.LOGIN_ACTION_STRINGS)
+                    .loginProcessingUrl(Endpoints.Admin.Login.LOGIN_ACTION_STRINGS)
+                    .usernameParameter("email")
+                    .defaultSuccessUrl(Endpoints.Admin.Dashboard.DASHBOARD_ACTION_STRINGS, true)
+                    .failureHandler(customAuthenticationFailureHandler)
                     .permitAll();
             })
             .logout(logout -> {
                 logout
-                    .logoutUrl("/logout")
-                    .logoutSuccessUrl("/login?logout=true")
+                    .logoutUrl(Endpoints.Admin.Logout.LOGOUT_ACTION_STRINGS)
+                    .logoutSuccessUrl(Endpoints.Admin.Logout.LOGOUT_SUCCESS_ACTION_STRINGS)
                     .invalidateHttpSession(true)
                     .deleteCookies("JSESSIONID")
                     .permitAll();
             })
             .exceptionHandling(exceptions -> {
                 exceptions
-                    .accessDeniedPage("/access-denied");
+                    .accessDeniedPage(Endpoints.Admin.Login.ACCESS_DENIED_ACTION_STRINGS);
             });
         return http.build();
     }
-**/
 }

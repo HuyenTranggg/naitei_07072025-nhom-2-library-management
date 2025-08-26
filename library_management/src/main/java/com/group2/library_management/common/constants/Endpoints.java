@@ -71,6 +71,34 @@ public final class Endpoints {
     }
 
     public static final class Admin {
-        private Admin() {}
+        public static final String BASE = ADMIN_BASE;
+        public static final String ALL_STRINGS = BASE + "/**";
+        public static final String BASE_STATIC = "admin";
+        public static final String ERROR_STATIC = "error";
+        
+        public static final class Login{
+            private Login() {}
+            public static final String failureUrl = BASE + "/login?error=true";
+            public static final String LOGIN_ACTION = "/login";
+            public static final String ACCESS_DENIED_ACTION = "/access-denied";
+            public static final String LOGIN_ACTION_STRINGS = BASE + LOGIN_ACTION;
+            public static final String ACCESS_DENIED_ACTION_STRINGS = BASE + ACCESS_DENIED_ACTION;
+            public static final String LOGIN_STATIC = BASE_STATIC + LOGIN_ACTION;
+            public static final String ACCESS_DENIED_STATIC = BASE_STATIC + ACCESS_DENIED_ACTION;
+        }
+
+        public static final class Logout {
+            private Logout() {}
+            public static final String LOGOUT_ACTION = "/logout";
+            public static final String LOGOUT_SUCCESS_ACTION = "/login?logout=true";
+            public static final String LOGOUT_ACTION_STRINGS = BASE + LOGOUT_ACTION;
+            public static final String LOGOUT_SUCCESS_ACTION_STRINGS = BASE + LOGOUT_SUCCESS_ACTION;
+        }
+
+        public static final class Dashboard {
+            private Dashboard() {}
+            public static final String DASHBOARD_ACTION = "/dashboard";
+            public static final String DASHBOARD_ACTION_STRINGS = BASE + DASHBOARD_ACTION;
+        }
     }
 }

@@ -49,12 +49,12 @@ function formatStatus(status, translations, asHtml = true) {
 
 function performGenericDelete(fullUrl, rowElement, barcode, translations) {
     // tokenMeta and headerMeta wil be used for spring security with login log out, but now it isn't implement.
-    // const tokenMeta = document.querySelector('meta[name="_csrf"]');
-    // const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+    const tokenMeta = document.querySelector('meta[name="_csrf"]');
+    const headerMeta = document.querySelector('meta[name="_csrf_header"]');
     const headers = {};
-    // if (tokenMeta && headerMeta) {
-    //     headers[headerMeta.content] = tokenMeta.content;
-    // }
+    if (tokenMeta && headerMeta) {
+        headers[headerMeta.content] = tokenMeta.content;
+    }
     fetch(fullUrl, {
         method: 'DELETE',
         headers: headers

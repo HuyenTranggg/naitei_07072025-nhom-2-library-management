@@ -134,7 +134,7 @@ public class BookImportService extends ExcelImportService<BookInstance>{
         // Nếu chưa, kiểm tra trong database
         Boolean existsBarcodeInDb = bookInstanceRepository.existsByBarcode(barcode);
         if (existsBarcodeInDb) {
-            throw new DuplicateBarcodeException(barcode);
+            throw new DuplicateBarcodeException(barcode, "Barcode");
         }
     }
 }
