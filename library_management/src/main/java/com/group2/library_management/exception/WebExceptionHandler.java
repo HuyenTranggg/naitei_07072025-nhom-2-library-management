@@ -202,6 +202,16 @@ public class WebExceptionHandler {
         return addFlashAndRedirect(ex.getMessage(), redirectAttributes, request);
     }
 
+    @ExceptionHandler(DuplicateBookException.class)
+    public String handleDuplicateBook(DuplicateBookException ex,
+                                    RedirectAttributes redirectAttributes,
+                                    HttpServletRequest request) {
+
+        String errorMessage = getMessage("admin.books.error.book_duplicate");
+
+        return addFlashAndRedirect(errorMessage, redirectAttributes, request);
+    }
+
     // helper
     private String addFlashAndRedirect(String message,
                                     RedirectAttributes redirectAttributes,

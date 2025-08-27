@@ -8,13 +8,14 @@ import com.group2.library_management.entity.Genre;
 import com.group2.library_management.service.AuthorService;
 import com.group2.library_management.service.BookService;
 import com.group2.library_management.service.GenreService;
+import com.group2.library_management.dto.request.CreateBookRequest;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
 import java.util.Optional;
 
-import java.util.List;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -24,6 +25,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -43,6 +45,10 @@ public class BookController {
     private static final String REDIRECT_TO_BOOK_EDIT = "redirect:/admin/books/%d/edit";
 
     private final MessageSource messageSource;
+
+    private String getMessage(String code) {
+        return messageSource.getMessage(code, null, LocaleContextHolder.getLocale());
+    }
 
     @GetMapping
     public String showBookList(
@@ -110,5 +116,29 @@ public class BookController {
         String successMessage = messageSource.getMessage("admin.books.message.update_success", null, LocaleContextHolder.getLocale());
         redirectAttributes.addFlashAttribute("successMessage", successMessage);
         return REDIRECT_TO_BOOKS_LIST;
+    }
+    
+    @GetMapping("/add")
+    public String showAddBookForm(Model model) {
+        List<Author> allAuthors = authorService.findAll(); 
+        List<Genre> allGenres = genreService.findAll(); 
+
+        model.addAttribute("allAuthors", allAuthors); 
+        model.addAttribute("allGenres", allGenres);   
+
+        return "admin/book/add";
+    }
+
+    @PostMapping("/add")
+    public String handleAddBook(
+        @Valid @ModelAttribute CreateBookRequest request,
+        RedirectAttributes redirectAttributes
+    ) {
+        bookService.createBook(request);
+
+        String successMessage = getMessage("admin.books.message.add_success");
+        redirectAttributes.addFlashAttribute("successMessage", successMessage);
+
+        return "redirect:/admin/books";
     }
 }
