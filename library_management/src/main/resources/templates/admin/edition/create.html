@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin_layout}">
+<head>
+    <title th:text="#{admin.editions.create.page_title}"></title>
+    <!-- Thêm CSS của Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Style để Select2 tương thích tốt hơn với theme Bootstrap */
+        .select2-container--default .select2-selection--single {
+            height: calc(2.25rem + 2px);
+            padding: .375rem .75rem;
+            border: 1px solid #ced4da;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: calc(2.25rem + 2px);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <h3 class="page-title">
+            <span class="page-title-icon bg-gradient-primary text-white mr-2">
+                <i class="mdi mdi-plus-circle"></i>
+            </span>
+            <span th:text="#{admin.editions.create.header_title}"></span>
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}" th:text="#{admin.breadcrumb.dashboard}"></a></li>
+                <li class="breadcrumb-item"><a th:href="@{/admin/books}" th:text="#{admin.breadcrumb.all_books}"></a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="#{admin.breadcrumb.create_edition}"></li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-12 grid-margin">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title" th:text="#{admin.editions.create.card_title}"></h4>
+
+                    <!-- Form thêm mới -->
+                    <form th:action="@{/admin/editions/new}"
+                          th:object="${editionRequest}" method="post" enctype="multipart/form-data" class="forms-sample">
+
+                        <!-- Hiển thị thông báo lỗi (nếu có redirect từ GlobalExceptionHandler) -->
+                        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                        <div class="form-group">
+                            <label for="book" th:text="#{admin.editions.edit.label.book_title}"></label>
+                            <select class="form-control select2-searchable" id="book" th:field="*{bookId}">
+                                <option value="" th:text="#{admin.editions.create.placeholder.select_book}"></option>
+                                <option th:each="b : ${allBooks}" th:value="${b.id}" th:text="${b.title}"></option>
+                            </select>
+                            <small class="text-danger" th:if="${#fields.hasErrors('bookId')}" th:errors="*{bookId}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="title" th:text="#{admin.editions.edit.label.title}"></label>
+                            <input type="text" class="form-control" id="title" th:field="*{title}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="isbn" th:text="#{admin.editions.edit.label.isbn}"></label>
+                            <input type="text" class="form-control" id="isbn" th:field="*{isbn}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="publisher" th:text="#{admin.editions.edit.label.publisher}"></label>
+                            <select class="form-control select2-searchable" id="publisher" th:field="*{publisherId}">
+                                <option value="" th:text="#{admin.editions.create.placeholder.select_publisher}"></option>
+                                <option th:each="p : ${allPublishers}" th:value="${p.id}" th:text="${p.name}"></option>
+                            </select>
+                            <small class="text-danger" th:if="${#fields.hasErrors('publisherId')}" th:errors="*{publisherId}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="publicationDate" th:text="#{admin.editions.edit.label.publication_date}"></label>
+                            <input type="date" class="form-control" id="publicationDate" th:field="*{publicationDate}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('publicationDate')}" th:errors="*{publicationDate}"></small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="pageNumber" th:text="#{admin.editions.edit.label.pages}"></label>
+                            <input type="number" class="form-control" id="pageNumber" th:field="*{pageNumber}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('pageNumber')}" th:errors="*{pageNumber}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="language" th:text="#{admin.editions.edit.label.language}"></label>
+                            <input type="text" class="form-control" id="language" th:field="*{language}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('language')}" th:errors="*{language}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="format" th:text="#{admin.editions.edit.label.format}"></label>
+                            <select class="form-control" id="format" th:field="*{format}">
+                                <option th:each="f : ${allFormats}" th:value="${f}" th:text="${f.name()}"></option>
+                            </select>
+                            <small class="text-danger" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="coverImageFile" th:text="#{admin.editions.edit.label.upload_image}"></label>
+                            <input type="file" class="form-control-file" id="coverImageFile" name="coverImageFile">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="initialQuantity" th:text="#{admin.editions.edit.label.initial_quantity}"></label>
+                            <input type="number" class="form-control" id="initialQuantity" th:field="*{initialQuantity}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('initialQuantity')}" th:errors="*{initialQuantity}"></small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="availableQuantity" th:text="#{admin.editions.edit.label.available_quantity}"></label>
+                            <input type="number" class="form-control" id="availableQuantity" th:field="*{availableQuantity}">
+                            <small class="text-danger" th:if="${#fields.hasErrors('availableQuantity')}" th:errors="*{availableQuantity}"></small>
+                        </div>
+
+
+                        <button type="submit" class="btn btn-gradient-primary mr-2" th:text="#{admin.editions.create.button.create}"></button>
+                        <a th:href="@{/admin/books}" class="btn btn-light" th:text="#{admin.editions.create.button.cancel}"></a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <!-- Thêm JS của jQuery (Select2 yêu cầu) và Select2 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        // Khởi tạo Select2 cho các dropdown có thể tìm kiếm
+        $(document).ready(function() {
+            $('.select2-searchable').select2({
+                placeholder: "Chọn hoặc gõ để tìm kiếm",
+                allowClear: true
+            });
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

@@ -3,10 +3,26 @@ package com.group2.library_management.controller.admin;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.group2.library_management.dto.request.CreateEditionRequest;
+import com.group2.library_management.entity.Edition;
+import com.group2.library_management.entity.enums.BookFormat;
+import com.group2.library_management.service.BookService;
 import com.group2.library_management.service.EditionService;
+import com.group2.library_management.service.PublisherService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.group2.library_management.dto.request.UpdateEditionRequest;
 import com.group2.library_management.dto.response.EditionUpdateResponse;
@@ -28,6 +44,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class EditionController {
 
     private final EditionService editionService;
+    private final BookService bookService;
     private final PublisherService publisherService;
 
     private final MessageSource messageSource;
@@ -100,6 +117,40 @@ public class EditionController {
             null, 
             LocaleContextHolder.getLocale()
         );
+        redirectAttributes.addFlashAttribute("successMessage", successMessage);
+        
+        return "redirect:/admin/books";
+    }
+
+    @GetMapping("/new")
+    public String showCreateForm(Model model) {
+        model.addAttribute("editionRequest", new CreateEditionRequest());
+        model.addAttribute("allBooks", bookService.findAll());
+        model.addAttribute("allPublishers", publisherService.findAll());
+        model.addAttribute("allFormats", BookFormat.values());
+        model.addAttribute("activeMenu", "books");
+        return "admin/edition/create";
+    }
+
+    @PostMapping("/new")
+    public String processCreation(@Valid @ModelAttribute("editionRequest") CreateEditionRequest request,
+                                  BindingResult bindingResult,
+                                  @RequestParam("coverImageFile") MultipartFile coverImageFile,
+                                  RedirectAttributes redirectAttributes,
+                                  Model model) {
+        // Nếu validation cơ bản thất bại
+        if (bindingResult.hasErrors()) {
+            // Phải gửi lại danh sách cho các dropdown
+            model.addAttribute("allBooks", bookService.findAll());
+            model.addAttribute("allPublishers", publisherService.findAll());
+            model.addAttribute("allFormats", BookFormat.values());
+            model.addAttribute("activeMenu", "books");
+            return "admin/edition/create";
+        }
+        
+        Edition newEdition = editionService.createEdition(request, coverImageFile);
+        
+        String successMessage = messageSource.getMessage("admin.editions.message.create_success", null, LocaleContextHolder.getLocale());
         redirectAttributes.addFlashAttribute("successMessage", successMessage);
         
         return "redirect:/admin/books";

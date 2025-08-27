@@ -4,13 +4,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.group2.library_management.dto.response.ClientEditionDetailResponse;
 import com.group2.library_management.dto.response.EditionDetailResponse;
 import com.group2.library_management.dto.response.EditionListResponse;
 import com.group2.library_management.dto.response.EditionResponse;
+import com.group2.library_management.entity.Book;
+import com.group2.library_management.entity.BookInstance;
 import com.group2.library_management.entity.Edition;
 import com.group2.library_management.entity.enums.DeletionStatus;
+import com.group2.library_management.exception.DuplicateIsbnCreateEditionException;
 import com.group2.library_management.exception.OperationFailedException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,7 +22,9 @@ import com.group2.library_management.dto.response.EditionUpdateResponse;
 import com.group2.library_management.entity.Publisher;
 import com.group2.library_management.exception.ResourceNotFoundException;
 import com.group2.library_management.repository.BookInstanceRepository;
+import com.group2.library_management.repository.BookRepository;
 import com.group2.library_management.repository.EditionRepository;
+import com.group2.library_management.repository.PublisherRepository;
 import com.group2.library_management.repository.specification.EditionSpecification;
 import com.group2.library_management.service.*;
 import com.group2.library_management.entity.enums.BookStatus;
@@ -49,19 +55,22 @@ import com.group2.library_management.common.constants.PaginationConstants;
 import com.group2.library_management.dto.mapper.EditionMapper;
 import com.group2.library_management.dto.request.UpdateEditionRequest;
 import com.group2.library_management.dto.request.EditionQueryParameters;
+import com.group2.library_management.dto.request.CreateEditionRequest;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class EditionServiceImpl implements EditionService {
     private final EditionRepository editionRepository;
+    private final BookRepository bookRepository;
+    private final PublisherRepository publisherRepository;
+    private final BookInstanceRepository bookInstanceRepository;
+
+    private final MessageSource messageSource;
+
     private final EditionMapper editionMapper;
 
-    private final BookInstanceRepository bookInstanceRepository;
-    private final PublisherRepository publisherRepository;
     private final FileStorageService fileStorageService; // Service handle file storage
-    
-    private final MessageSource messageSource;
 
     private static final long MAX_FILE_SIZE_MB = 5;
     private static final long MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -264,6 +273,38 @@ public class EditionServiceImpl implements EditionService {
             );
             throw new OptimisticLockingFailureException(message);
         }
+    }
+
+    @Transactional
+    public Edition createEdition(CreateEditionRequest request, MultipartFile coverImageFile) {
+        // Kiểm tra ISBN duy nhất
+        if (editionRepository.existsByIsbn(request.getIsbn())) {
+            String message = messageSource.getMessage("validation.edition.isbn.unique", null, LocaleContextHolder.getLocale());
+            throw new DuplicateIsbnCreateEditionException(message);
+        }
+
+        if (coverImageFile != null && !coverImageFile.isEmpty()) {
+            validateCoverImage(coverImageFile);
+        }
+
+        Edition edition = editionMapper.toEntity(request);
+
+        Book book = bookRepository.findById(request.getBookId())
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
+        Publisher publisher = publisherRepository.findById(request.getPublisherId())
+                .orElseThrow(() -> new ResourceNotFoundException("Publisher not found"));
+
+        edition.setBook(book);
+        edition.setPublisher(publisher);
+
+        Edition savedEdition = editionRepository.save(edition);
+
+        if (coverImageFile != null && !coverImageFile.isEmpty()) {
+            String coverImageUrl = fileStorageService.storeFile(coverImageFile, savedEdition.getId());
+            savedEdition.setCoverImageUrl(coverImageUrl);
+        }
+        
+        return savedEdition;
     }
 
     private void validateCoverImage(MultipartFile file) {

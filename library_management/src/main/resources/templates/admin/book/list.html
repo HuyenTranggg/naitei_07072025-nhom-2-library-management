@@ -26,6 +26,13 @@
         </nav>
     </div>
 
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="card-title mb-0" th:text="#{admin.books.list.card_title}"></h4>
+        <a th:href="@{/admin/editions/new}" class="btn btn-gradient-primary btn-sm">
+            <i class="mdi mdi-plus"></i> Thêm mới Phiên bản
+        </a>
+    </div>
+
     <!-- === ANNOUNCE MESSAGE === -->
     <div class="row">
         <div class="col-12">
