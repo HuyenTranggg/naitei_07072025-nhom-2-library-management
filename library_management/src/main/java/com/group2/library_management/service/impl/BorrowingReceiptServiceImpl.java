@@ -19,6 +19,7 @@ import com.group2.library_management.dto.response.BorrowingReceiptResponse;
 import com.group2.library_management.entity.BookInstance;
 import com.group2.library_management.entity.BorrowingDetail;
 import com.group2.library_management.entity.BorrowingReceipt;
+import com.group2.library_management.entity.BorrowingRequestDetail;
 import com.group2.library_management.entity.Edition;
 import com.group2.library_management.entity.User;
 import com.group2.library_management.entity.enums.BookStatus;
@@ -28,6 +29,7 @@ import com.group2.library_management.repository.BorrowingDetailRepository;
 import com.group2.library_management.repository.BorrowingReceiptRepository;
 import com.group2.library_management.repository.EditionRepository;
 import com.group2.library_management.service.BorrowingReceiptService;
+import com.group2.library_management.repository.BorrowingRequestDetailRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
@@ -41,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
 
-    private static final String APPROVAL_ERROR_PREFIX = "Không thể phê duyệt: Các sách sau không còn sẵn sàng: ";
     private static final String RECEIPT_NOT_FOUND_ERROR = "Không tìm thấy phiếu mượn với ID: ";
     private static final String PENDING_STATUS_REQUIRED_ERROR = "Chỉ có thể phê duyệt yêu cầu đang ở trạng thái chờ phê duyệt";
     private static final String REJECTION_STATUS_REQUIRED_ERROR = "Chỉ có thể từ chối yêu cầu đang ở trạng thái chờ phê duyệt";
@@ -51,6 +52,7 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
     private final BookInstanceRepository bookInstanceRepository;
     private final EditionRepository editionRepository;
     private final BorrowingDetailRepository borrowingDetailRepository;
+    private final BorrowingRequestDetailRepository borrowingRequestDetailRepository;
 
     private final Map<Integer, LocalDateTime> detailExtendedDueDates = new HashMap<>();
 
@@ -152,41 +154,87 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
             throw new IllegalStateException(PENDING_STATUS_REQUIRED_ERROR);
         }
 
-        // Validate all book instances are available before approving
-        List<BookInstance> unavailableBooks = receipt.getBorrowingDetails().stream()
-                .map(BorrowingDetail::getBookInstance)
-                .filter(bookInstance -> bookInstance.getStatus() != BookStatus.AVAILABLE).toList();
+        // Get request details from borrowing_request_details table
+        List<BorrowingRequestDetail> requestDetails = borrowingRequestDetailRepository.findByBorrowingReceiptId(id);
+        if (requestDetails == null || requestDetails.isEmpty()) {
+            throw new IllegalStateException("Không tìm thấy chi tiết yêu cầu mượn cho phiếu này");
+        }
 
-        // If any book is not available, reject the approval
-        if (!unavailableBooks.isEmpty()) {
-            String errorMessage = APPROVAL_ERROR_PREFIX + unavailableBooks.stream()
-                    .map(this::formatBookInstanceError).collect(Collectors.joining(", "));
+        // Check availability and prepare error messages
+        List<String> insufficientBooks = new ArrayList<>();
+        Map<Integer, List<BookInstance>> availableInstancesMap = new HashMap<>();
+
+        // Check availability for all editions
+        for (BorrowingRequestDetail requestDetail : requestDetails) {
+            Integer editionId = requestDetail.getEdition().getId();
+            int requestedQuantity = requestDetail.getQuantity();
+
+            // Find available book instances for this edition
+            List<BookInstance> availableInstances = bookInstanceRepository
+                    .findByEditionIdAndStatusOrderByAcquiredDateAsc(editionId, BookStatus.AVAILABLE);
+
+            if (availableInstances.size() < requestedQuantity) {
+                String editionTitle = requestDetail.getEdition().getTitle();
+                insufficientBooks.add(String.format("'%s' (yêu cầu: %d, có sẵn: %d)", 
+                    editionTitle, requestedQuantity, availableInstances.size()));
+            } else {
+                // Take only the needed quantity
+                availableInstancesMap.put(editionId, availableInstances.subList(0, requestedQuantity));
+            }
+        }
+
+        // If any edition doesn't have enough books, throw error with details
+        if (!insufficientBooks.isEmpty()) {
+            String errorMessage = "Không thể phê duyệt: Không đủ sách có sẵn cho " + String.join(", ", insufficientBooks);
             throw new IllegalStateException(errorMessage);
         }
 
         // All books are available, proceed with approval
-        // Update borrowing receipt status
-        receipt.setStatus(BorrowingStatus.APPROVED);
+        List<BorrowingDetail> borrowingDetailsToSave = new ArrayList<>();
 
-        // Update status of all book instances and decrease availableQuantity
-        receipt.getBorrowingDetails().forEach(detail -> {
-            BookInstance bookInstance = detail.getBookInstance();
-            Edition edition = bookInstance.getEdition();
+        for (BorrowingRequestDetail requestDetail : requestDetails) {
+            Integer editionId = requestDetail.getEdition().getId();
+            List<BookInstance> instancesToAssign = availableInstancesMap.get(editionId);
+            Edition edition = requestDetail.getEdition();
 
-            // Update book instance status: AVAILABLE → RESERVED (when approve request)
-            bookInstance.setStatus(BookStatus.RESERVED);
-            bookInstanceRepository.save(bookInstance);
+            for (BookInstance bookInstance : instancesToAssign) {
+                // Create borrowing detail
+                BorrowingDetail borrowingDetail = BorrowingDetail.builder()
+                        .borrowingReceipt(receipt)
+                        .bookInstance(bookInstance)
+                        .build();
+                borrowingDetailsToSave.add(borrowingDetail);
 
-            // Check availableQuantity before decreasing
-            if (edition.getAvailableQuantity() <= 0) {
+                // Update book instance status: AVAILABLE → RESERVED
+                bookInstance.setStatus(BookStatus.RESERVED);
+                bookInstanceRepository.save(bookInstance);
+
+                log.debug("Assigned BookInstance ID {} (barcode: {}) to receipt ID {}", 
+                    bookInstance.getId(), bookInstance.getBarcode(), receipt.getId());
+            }
+
+            // Update available quantity for the edition
+            Integer currentAvailable = edition.getAvailableQuantity();
+            if (currentAvailable == null || currentAvailable < instancesToAssign.size()) {
                 throw new IllegalStateException(
                         "Số lượng sách khả dụng không đủ để cho mượn: " + edition.getTitle());
             }
-            edition.setAvailableQuantity(edition.getAvailableQuantity() - 1);
-            editionRepository.save(edition); // Save edition to update availableQuantity
-        });
+            edition.setAvailableQuantity(currentAvailable - instancesToAssign.size());
+            editionRepository.save(edition);
 
+            log.debug("Updated available quantity for Edition ID {} to {}", 
+                editionId, edition.getAvailableQuantity());
+        }
+
+        // Save all borrowing details
+        borrowingDetailRepository.saveAll(borrowingDetailsToSave);
+
+        // Update receipt status
+        receipt.setStatus(BorrowingStatus.APPROVED);
         borrowingReceiptRepository.save(receipt);
+
+        log.info("Successfully approved borrowing request ID {} with {} book instances assigned", 
+            receipt.getId(), borrowingDetailsToSave.size());
 
         // TODO: Send email notification to user
         // emailService.sendApprovalNotification(receipt.getUser().getEmail(), receipt);
@@ -236,7 +284,8 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
             bookInstanceRepository.save(bookInstance);
 
             // Increase availableQuantity when changing from BORROWED to AVAILABLE
-            edition.setAvailableQuantity(edition.getAvailableQuantity() + 1);
+            int currentAvailable = edition.getAvailableQuantity() != null ? edition.getAvailableQuantity() : 0;
+            edition.setAvailableQuantity(currentAvailable + 1);
             editionRepository.save(edition); // Save edition to update availableQuantity
 
             // Set return date
@@ -360,7 +409,9 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
         bookInstance.setStatus(BookStatus.AVAILABLE);
         bookInstanceRepository.save(bookInstance);
 
-        edition.setAvailableQuantity(edition.getAvailableQuantity() + 1);
+        Integer currentAvailable = edition.getAvailableQuantity();
+        int newAvailable = (currentAvailable != null ? currentAvailable : 0) + 1;
+        edition.setAvailableQuantity(newAvailable);
         editionRepository.save(edition);
 
         detail.setActualReturnDate(currentTime);
@@ -369,31 +420,24 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
         log.info("Detail ID {} - Đánh dấu không lấy sách lúc {}", detail.getId(), currentTime);
     }
 
-    private void handleReturnAction(BorrowingDetail detail, UpdateBorrowingDetailRequest req,
-            LocalDateTime batchCurrentTime) {
+    private void handleReturnAction(BorrowingDetail detail, UpdateBorrowingDetailRequest req, LocalDateTime currentTime) {
         BookInstance bookInstance = detail.getBookInstance();
 
-        if (bookInstance.getStatus() != BookStatus.BORROWED) {
-            throw new IllegalStateException("Chỉ có thể trả sách khi đang ở trạng thái 'Đang mượn'");
+        if (detail.getActualReturnDate() != null ||
+                (bookInstance.getStatus() != BookStatus.BORROWED && bookInstance.getStatus() != BookStatus.RESERVED)) {
+            throw new IllegalStateException("Không thể trả sách: Sách đã được xử lý hoặc không ở trạng thái 'Đang mượn' hoặc 'Đã đặt chỗ'.");
         }
 
-        if (detail.getActualReturnDate() != null) {
-            throw new IllegalStateException("Sách này đã được trả trước đó");
-        }
-
-        LocalDateTime returnDate = req.getActualReturnDate() != null ? req.getActualReturnDate() : batchCurrentTime;
-
-        if (returnDate.isAfter(batchCurrentTime)) {
-            throw new IllegalArgumentException("Ngày trả thực tế không được ở tương lai.");
-        }
+        LocalDateTime returnDate = req.getActualReturnDate() != null ? req.getActualReturnDate() : currentTime;
 
         detail.setActualReturnDate(returnDate);
-
         bookInstance.setStatus(BookStatus.AVAILABLE);
         bookInstanceRepository.save(bookInstance);
 
         Edition edition = bookInstance.getEdition();
-        edition.setAvailableQuantity(edition.getAvailableQuantity() + 1);
+        Integer currentAvailable = edition.getAvailableQuantity();
+        int newAvailable = (currentAvailable != null ? currentAvailable : 0) + 1;
+        edition.setAvailableQuantity(newAvailable);
         editionRepository.save(edition);
 
         borrowingDetailRepository.save(detail);
@@ -406,7 +450,7 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
 
         if (detail.getActualReturnDate() != null ||
                 (bookInstance.getStatus() != BookStatus.BORROWED && bookInstance.getStatus() != BookStatus.RESERVED)) {
-            return;
+            throw new IllegalStateException("Không thể báo mất sách: Sách đã được xử lý hoặc không ở trạng thái 'Đang mượn' hoặc 'Đã đặt chỗ'.");
         }
 
         LocalDateTime reportDate = req.getActualReturnDate() != null ? req.getActualReturnDate() : currentTime;
@@ -420,13 +464,12 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
         log.info("Detail ID {} - Báo mất lúc {}", detail.getId(), reportDate);
     }
 
-    private void handleDamagedAction(BorrowingDetail detail, UpdateBorrowingDetailRequest req,
-            LocalDateTime currentTime) {
+    private void handleDamagedAction(BorrowingDetail detail, UpdateBorrowingDetailRequest req, LocalDateTime currentTime) {
         BookInstance bookInstance = detail.getBookInstance();
 
         if (detail.getActualReturnDate() != null ||
                 (bookInstance.getStatus() != BookStatus.BORROWED && bookInstance.getStatus() != BookStatus.RESERVED)) {
-            return;
+            throw new IllegalStateException("Không thể báo hỏng sách: Sách đã được xử lý hoặc không ở trạng thái 'Đang mượn' hoặc 'Đã đặt chỗ'.");
         }
 
         LocalDateTime reportDate = req.getActualReturnDate() != null ? req.getActualReturnDate() : currentTime;
@@ -440,8 +483,7 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
         log.info("Detail ID {} - Báo hỏng lúc {}", detail.getId(), reportDate);
     }
 
-    private void handleExtendAction(BorrowingReceipt receipt, UpdateBorrowingDetailRequest req,
-            LocalDateTime currentTime) {
+    private void handleExtendAction(BorrowingReceipt receipt, UpdateBorrowingDetailRequest req, LocalDateTime currentTime) {
         if (req.getExtendDays() == null || req.getExtendDays() <= 0) {
             throw new IllegalArgumentException("Số ngày gia hạn phải lớn hơn 0.");
         }
@@ -449,6 +491,11 @@ public class BorrowingReceiptServiceImpl implements BorrowingReceiptService {
         BorrowingDetail detail = borrowingDetailRepository.findById(req.getBorrowingDetailId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Không tìm thấy chi tiết mượn ID: " + req.getBorrowingDetailId()));
+
+        // Ensure the book is in a valid state for extension
+        if (detail.getBookInstance().getStatus() != BookStatus.BORROWED) {
+            throw new IllegalStateException("Chỉ có thể gia hạn sách khi đang ở trạng thái 'Đang mượn'");
+        }
 
         LocalDateTime currentDetailDueDate = detailExtendedDueDates.get(detail.getId());
         if (currentDetailDueDate == null) {

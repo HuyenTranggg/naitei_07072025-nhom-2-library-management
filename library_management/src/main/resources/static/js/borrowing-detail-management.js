@@ -8,8 +8,8 @@ $(document).ready(function () {
     function checkAndUpdateOverdueStatus() {
         const receiptId = window.location.pathname.split('/').pop();
         
-        fetch(`/admin/borrow-requests/${receiptId}/check-overdue`, {
-            method: 'PUT',
+        fetch(`/admin/borrow-requests/${receiptId}/check-overdue?_method=PUT`, {
+            method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
@@ -216,33 +216,51 @@ $(document).ready(function () {
         updateBtn.prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin mr-2"></i>Đang xử lý...');
         
         const receiptId = window.location.pathname.split('/').pop();
+        const updateUrl = `/admin/borrow-requests/${receiptId}/update-details`;
         
-        console.log('Sending request to:', `/admin/borrow-requests/${receiptId}/update-details`);
+        console.log('Sending request to:', updateUrl);
         console.log('Request body:', JSON.stringify(updates, null, 2));
         
-        fetch(`/admin/borrow-requests/${receiptId}/update-details`, {
+        fetch(updateUrl, {
             method: 'PUT',
             headers: { 
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(updates)
         })
         .then(async response => {
             console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
+            console.log('Response headers:', [...response.headers]);
             
             const responseText = await response.text();
             console.log('Response text:', responseText);
             
             if (response.ok) {
-                return responseText === 'success' ? 'success' : JSON.parse(responseText);
+                let data;
+                try {
+                    data = responseText ? JSON.parse(responseText) : 'success';
+                } catch (e) {
+                    data = responseText || 'success';
+                }
+                return data;
             } else {
-                throw new Error(responseText || `HTTP ${response.status}: Lỗi không xác định.`);
+                let errorMessage;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
+                } catch (e) {
+                    errorMessage = responseText || `HTTP ${response.status}: Lỗi không xác định`;
+                }
+                throw new Error(errorMessage);
             }
         })
         .then(data => {
             console.log('Success response:', data);
+            
+            changes = {};
+            
             sessionStorage.setItem('updateSuccess', 'Cập nhật phiếu mượn thành công!');
             window.location.reload();
         })
@@ -252,12 +270,7 @@ $(document).ready(function () {
             
             let errorMessage = 'Có lỗi xảy ra khi cập nhật.';
             if (error.message) {
-                try {
-                    const errorObj = JSON.parse(error.message);
-                    errorMessage = errorObj.message || errorObj.error || error.message;
-                } catch (e) {
-                    errorMessage = error.message;
-                }
+                errorMessage = error.message;
             }
             
             if (typeof Swal !== 'undefined') {
@@ -274,11 +287,14 @@ $(document).ready(function () {
     function addChange(detailId, data) {
         changes[detailId] = { ...(changes[detailId] || {}), ...data };
         console.log(`Added change for detail ${detailId}:`, changes[detailId]);
+        
+        console.log('Total changes:', Object.keys(changes).length);
     }
 
     function removeChange(detailId) {
         delete changes[detailId];
         console.log(`Removed change for detail ${detailId}`);
+        console.log('Remaining changes:', Object.keys(changes).length);
     }
 
     function showReturnDateInput(detailId, $row) {
