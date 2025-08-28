@@ -1,0 +1,81 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Poppins', sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.container-scroller {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #f2edf3;
+    background: linear-gradient(to right, #80bdff, #80bdff);
+}
+
+.auth-form-light {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 2.5rem !important;
+}
+
+.brand-logo {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.brand-logo img {
+    width: 150px;
+}
+
+.auth-form-light .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.auth-form-light .form-control {
+    border-radius: 5px;
+    padding: 0.9rem 1rem;
+    height: auto;
+    border: 1px solid #ced4da;
+    transition: all 0.3s ease-in-out;
+}
+
+.auth-form-light .form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.auth-form-light .btn-primary {
+    background: linear-gradient(to right, #80bdff, #80bdff);
+    border: none;
+    padding: 0.9rem;
+    border-radius: 5px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.auth-form-light .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(154, 85, 255, 0.4);
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper .form-control {
+    padding-right: 3rem;
+}
+
+.toggle-password-icon {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6c757d;
+    font-size: 1.25rem;
+    z-index: 10;
+}
