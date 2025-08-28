@@ -7,12 +7,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.group2.library_management.common.constants.Endpoints;
 import com.group2.library_management.dto.request.EditionQueryParameters;
 import com.group2.library_management.dto.response.BaseApiResponse;
+import com.group2.library_management.dto.response.ClientEditionDetailResponse;
 import com.group2.library_management.dto.response.EditionListResponse;
 import com.group2.library_management.service.EditionService;
 
@@ -44,6 +46,23 @@ public class EditionController {
                 successMessage
         );
 
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping(Endpoints.ApiV1.Editions.BY_ID_ACTION)
+    public ResponseEntity<BaseApiResponse<ClientEditionDetailResponse>> getEditionById(
+            @PathVariable("id") Integer id) {
+        
+        ClientEditionDetailResponse editionDetail = editionService.getEditionDetailForClient(id);
+
+        String successMessage = getMessage("success.edition.get_detail");
+        
+        BaseApiResponse<ClientEditionDetailResponse> response = new BaseApiResponse<>(
+                HttpStatus.OK.value(),
+                editionDetail,
+                successMessage
+        );
+        
         return ResponseEntity.ok(response);
     }
 }

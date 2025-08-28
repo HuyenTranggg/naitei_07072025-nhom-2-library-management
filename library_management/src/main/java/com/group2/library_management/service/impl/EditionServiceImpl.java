@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import com.group2.library_management.dto.response.ClientEditionDetailResponse;
 import com.group2.library_management.dto.response.EditionDetailResponse;
 import com.group2.library_management.dto.response.EditionListResponse;
 import com.group2.library_management.dto.response.EditionResponse;
@@ -280,5 +281,13 @@ public class EditionServiceImpl implements EditionService {
             String message = messageSource.getMessage("error.file.invalid.type", null, LocaleContextHolder.getLocale());
             throw new IllegalArgumentException(message);
         }
+    }
+
+    @Override
+    public ClientEditionDetailResponse getEditionDetailForClient(Integer id) {
+        Edition edition = editionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException());
+        
+        return editionMapper.toClientDetailDto(edition);
     }
 }

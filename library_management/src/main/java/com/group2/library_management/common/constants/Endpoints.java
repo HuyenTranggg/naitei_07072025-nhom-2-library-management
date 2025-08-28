@@ -65,6 +65,7 @@ public final class Endpoints {
             private Editions() {}
             
             public static final String BASE_URL = BASE + "/editions";
+            public static final String BY_ID_ACTION = "/{id}";
 
             public static final String ALL_EDITIONS_PATHS = BASE_URL + "/**"; 
         }
