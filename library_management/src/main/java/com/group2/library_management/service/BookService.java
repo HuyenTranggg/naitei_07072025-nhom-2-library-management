@@ -31,4 +31,5 @@ public interface BookService {
     List<Book> findAll();
 
     void createBook(CreateBookRequest request);
+    void deleteBook(Integer id);
 }

@@ -138,9 +138,32 @@
                                 <a th:href="@{/admin/books/{id}/edit(id=${book.id()})}" class="action-edit text-warning" th:title="#{admin.books.tooltip.edit}">
                                     <i class="mdi mdi-pencil icon-large"></i>
                                 </a>
-                                <a href="#" class="action-delete text-danger" th:title="#{admin.books.tooltip.delete}">
-                                    <i class="mdi mdi-delete icon-large"></i>
-                                </a>
+                                
+                                <!-- An toàn hơn khi thêm th:if ở ngoài để kiểm tra null trước -->
+                                <th:block th:if="${book.deletionStatus != null}">
+
+                                    <!-- Trường hợp 1: Sách KHÔNG THỂ XÓA -->
+                                    <button th:if="${book.deletionStatus.name() == 'CANNOT_DELETE'}"
+                                            type="button"
+                                            class="btn-transparent ml-2" 
+                                            disabled
+                                            th:title="#{admin.books.delete.tooltip.disabled}">
+                                        <i class="mdi mdi-delete text-muted icon-large"></i>
+                                    </button>
+
+                                    <!-- Trường hợp 2: Sách CÓ THỂ XÓA -->
+                                    <button th:if="${book.deletionStatus.name() != 'CANNOT_DELETE'}"
+                                            type="button"
+                                            class="action-delete btn-transparent js-delete-book ml-2"
+                                            th:title="#{admin.books.tooltip.delete}"
+                                            th:data-book-id="${book.id}"
+                                            th:data-book-title="${book.title}"
+                                            th:data-confirm-message="#{admin.books.delete.confirm.message(${book.title})}">
+                                        <i class="mdi mdi-delete text-danger icon-large"></i>
+                                    </button>
+                                    <!--<p>Deletion status: <span th:text="${book.deletionStatus}"></span></p>-->                              
+                                </th:block>
+
                             </td>
                         </tr>
                         </tbody>
@@ -268,6 +291,29 @@
                         <button type="submit" class="btn btn-danger" th:text="#{admin.editions.delete.button.confirm}"></button>
                     </form>
                     <button type="button" class="btn btn-light" data-dismiss="modal" th:text="#{admin.editions.delete.button.cancel}"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MODAL XÁC NHẬN XÓA BOOK === -->
+    <div class="modal fade" id="deleteBookModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" th:text="#{admin.books.delete.confirm.title}"></h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteBookConfirmMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteBookForm" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <input type="hidden" name="_method" value="delete"/>
+                        <button type="submit" class="btn btn-danger" th:text="#{admin.books.delete.button.confirm}"></button>
+                    </form>
+                    <button type="button" class="btn btn-light" data-dismiss="modal" th:text="#{admin.books.delete.button.cancel}"></button>
                 </div>
             </div>
         </div>

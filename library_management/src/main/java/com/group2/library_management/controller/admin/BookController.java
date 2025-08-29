@@ -23,9 +23,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -117,7 +119,6 @@ public class BookController {
         redirectAttributes.addFlashAttribute("successMessage", successMessage);
         return REDIRECT_TO_BOOKS_LIST;
     }
-    
     @GetMapping("/add")
     public String showAddBookForm(Model model) {
         List<Author> allAuthors = authorService.findAll(); 
@@ -140,5 +141,17 @@ public class BookController {
         redirectAttributes.addFlashAttribute("successMessage", successMessage);
 
         return "redirect:/admin/books";
+    }
+
+    @DeleteMapping("/{id}")
+    public String processBookDelete(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+
+        bookService.deleteBook(id);
+
+        String successMessage = messageSource.getMessage("admin.books.message.delete_success", null, LocaleContextHolder.getLocale());
+
+        redirectAttributes.addFlashAttribute("successMessage", successMessage);
+
+        return REDIRECT_TO_BOOKS_LIST;
     }
 }
