@@ -11,19 +11,26 @@
 <body>
 
 <div layout:fragment="content">
-    <div class="page-header">
-        <h3 class="page-title">
-            <span class="page-title-icon bg-gradient-primary text-white mr-2">
-                <i class="mdi mdi-book-open-page-variant"></i>
-            </span>
-            <span th:text="#{admin.books.header_title}"></span>
-        </h3>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}" th:text="#{admin.breadcrumb.dashboard}"></a></li>
-                <li class="breadcrumb-item active" aria-current="page" th:text="#{admin.breadcrumb.all_books}"></li>
-            </ol>
-        </nav>
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="page-title">
+                <span class="page-title-icon bg-gradient-primary text-white mr-2">
+                    <i class="mdi mdi-book-open-page-variant"></i>
+                </span>
+                <span th:text="#{admin.books.header_title}"></span>
+            </h3>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}" th:text="#{admin.breadcrumb.dashboard}"></a></li>
+                    <li class="breadcrumb-item active" aria-current="page" th:text="#{admin.breadcrumb.all_books}"></li>
+                </ol>
+            </nav>
+        </div>
+        
+        <a th:href="@{/admin/books/add}" class="btn btn-primary btn-icon-text">
+            <i class="mdi mdi-plus-circle mr-2"></i>
+            <span th:text="#{admin.books.button.add_new}"></span>
+        </a>
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">

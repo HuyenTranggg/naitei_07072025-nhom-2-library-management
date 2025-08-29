@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/admin_layout}">
+
+<head>
+    <title th:text="#{admin.books.add.page_title}"></title>
+    <link rel="stylesheet" th:href="@{/css/book-add.css}">
+    <!-- Thư viện Select2 cho multi-select box -->
+    <link th:href="@{/vendors/css/select2.min.css}" rel="stylesheet" />
+</head>
+
+<body>
+
+<div layout:fragment="content">
+    <!-- === PAGE HEADER === -->
+    <div class="page-header">
+        <h3 class="page-title">
+            <span class="page-title-icon bg-gradient-primary text-white mr-2">
+                <i class="mdi mdi-book-plus"></i>
+            </span>
+            <span th:text="#{admin.books.add.header_title}"></span>
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}" th:text="#{admin.breadcrumb.dashboard}"></a></li>
+                <li class="breadcrumb-item"><a th:href="@{/admin/books}" th:text="#{admin.breadcrumb.all_books}"></a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="#{admin.breadcrumb.add_book}"></li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- === ADD BOOK FORM === -->
+    <div class="row">
+        <div class="col-12 grid-margin">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title" th:text="#{admin.books.add.form_title}"></h4>
+
+                    <!-- Success Message -->
+                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <span th:text="${successMessage}"></span>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <span th:text="${errorMessage}"></span>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <form id="addBookForm" th:action="@{/admin/books/add}" method="post">
+                        <!-- Book Title -->
+                        <div class="form-group">
+                            <label for="title" th:text="#{admin.books.add.label.title}"></label>
+                            <input type="text" class="form-control" id="title" name="title"
+                                   th:placeholder="#{admin.books.add.placeholder.title}"
+                                   th:title="#{admin.books.add.validation.title_size}"
+                                   maxlength="255"
+                                   required>
+                                
+                            <small class="form-text text-muted text-right" id="title-char-counter">0/255</small>
+                            
+                            <div class="invalid-feedback" th:text="#{admin.books.add.validation.title_required}"></div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="form-group">
+                            <label for="description" th:text="#{admin.books.add.label.description}"></label>
+                            <textarea class="form-control" id="description" name="description" rows="5"
+                                      th:placeholder="#{admin.books.add.placeholder.description}"></textarea>
+                        </div>
+
+                        <!-- Authors Multi-select -->
+                        <div class="form-group">
+                            <label for="authors" th:text="#{admin.books.add.label.authors}"></label>
+                            <select class="form-control select2-multiple" id="authors" name="authorIds"
+                                    multiple="multiple" 
+                                    th:data-placeholder="#{admin.books.add.placeholder.authors}"
+                                    required>
+                                
+                                <option th:each="author : ${allAuthors}" 
+                                        th:value="${author.id}" 
+                                        th:text="${author.name}">
+                                </option>
+                            </select>
+
+                            <div class="invalid-feedback" th:text="#{admin.books.add.validation.authors_required}"></div>
+                        </div>
+
+                        <!-- Genres Multi-select -->
+                        <div class="form-group">
+                            <label for="genres" th:text="#{admin.books.add.label.genres}"></label>
+                            <select class="form-control select2-multiple" id="genres" name="genreIds"
+                                    multiple="multiple" 
+                                    th:data-placeholder="#{admin.books.add.placeholder.genres}"
+                                    required>
+
+                                <option th:each="genre : ${allGenres}" 
+                                        th:value="${genre.id}" 
+                                        th:text="${genre.name}">
+                                </option>
+                            </select>
+                            
+                            <div class="invalid-feedback" th:text="#{admin.books.add.validation.genres_required}"></div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="form-group text-right mt-4">
+                            <button type="submit" class="btn btn-gradient-primary mr-2" th:text="#{admin.books.add.button.save}"></button>
+                            <a th:href="@{/admin/books}" class="btn btn-light" th:text="#{admin.books.add.button.cancel}"></a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="page-scripts">
+    <script th:src="@{/vendors/js/select2.min.js}"></script>
+    <script th:src="@{/js/book-add.js}"></script>
+</th:block>
+
+</body>
+</html>
