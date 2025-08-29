@@ -120,20 +120,16 @@ public class WebExceptionHandler {
     public String handleOperationFailedException(OperationFailedException ex, 
                                                  RedirectAttributes redirectAttributes,
                                                  HttpServletRequest request) {
-        
-        String messageKey = ex.getMessage();
-        
-        String localizedErrorMessage = messageSource.getMessage(
-            messageKey, 
-            null, 
-            ex.getMessage(),
-            LocaleContextHolder.getLocale()
-        );
 
-        redirectAttributes.addFlashAttribute("errorMessage", localizedErrorMessage);
+
+        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
 
         String referer = request.getHeader("Referer");
-        return "redirect:" + (referer != null ? referer : "/admin/dashboard");
+
+        if (referer != null && !referer.isEmpty()) {
+            return "redirect:" + referer;
+        }
+        return "redirect:/"; 
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -153,6 +149,17 @@ public class WebExceptionHandler {
             return "redirect:" + referer;
         }
         return "redirect:/";
+    }
+
+    @ExceptionHandler(DuplicateIsbnCreateEditionException.class)
+    public String handleDuplicateIsbnCreateEditionException(
+            DuplicateIsbnCreateEditionException ex,
+            RedirectAttributes redirectAttributes,
+            HttpServletRequest request) {
+
+        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+
+        return "redirect:/admin/editions/new";
     }
 
     @ExceptionHandler(FileStorageException.class)

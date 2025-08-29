@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.group2.library_management.dto.request.UpdateEditionRequest;
 import com.group2.library_management.dto.response.ClientEditionDetailResponse;
+import com.group2.library_management.dto.request.CreateEditionRequest;
 import com.group2.library_management.dto.response.EditionDetailResponse;
 import com.group2.library_management.dto.response.EditionListResponse;
 import com.group2.library_management.dto.response.EditionResponse;
@@ -139,4 +140,11 @@ public abstract class EditionMapper {
                 edition.getAvailableQuantity() 
         );
     }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "book", ignore = true)
+    @Mapping(target = "publisher", ignore = true)
+    @Mapping(target = "coverImageUrl", ignore = true)
+    @Mapping(target = "bookInstances", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
+    public abstract Edition toEntity(CreateEditionRequest request);
 } 

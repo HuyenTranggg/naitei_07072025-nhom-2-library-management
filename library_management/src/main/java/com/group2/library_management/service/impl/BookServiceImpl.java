@@ -226,4 +226,8 @@ public class BookServiceImpl implements BookService {
             throw new DataIntegrityViolationException(message, e);
         }
     }
+
+    public List<Book> findAll() {
+        return bookRepository.findAll();
+    }
 }
