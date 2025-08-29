@@ -22,5 +22,7 @@ public interface BorrowingMapper {
     BorrowingRequestResponse toBorrowingRequestResponse(BorrowingReceipt receipt);
 
     @Mapping(source = "edition.id", target = "editionId")
+    @Mapping(source = "edition.title", target = "title")
+    @Mapping(source = "edition.isbn", target = "isbn")
     BorrowingRequestDetailResponse toBorrowingRequestDetailResponse(BorrowingRequestDetail detail);
 }

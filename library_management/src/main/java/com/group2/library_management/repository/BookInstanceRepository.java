@@ -35,6 +35,12 @@ public interface BookInstanceRepository extends ListCrudRepository<BookInstance,
            nativeQuery = true)
     Integer existsByEditionIdNative(@Param("editionId") Integer editionId);
 
+    @Query("SELECT bi FROM BookInstance bi WHERE bi.edition.id = :editionId AND bi.status = :status ORDER BY bi.acquiredDate ASC")
+    List<BookInstance> findByEditionIdAndStatusOrderByAcquiredDateAsc(@Param("editionId") Integer editionId, @Param("status") BookStatus status);
+
+    @Query("SELECT COUNT(bi) FROM BookInstance bi WHERE bi.edition.id = :editionId AND bi.status = :status")
+    long countByEditionIdAndStatus(@Param("editionId") Integer editionId, @Param("status") BookStatus status);
+
     // default method thực hiện convert sang boolean
     default boolean existsByEditionId(Integer editionId) {
         Integer result = existsByEditionIdNative(editionId);
